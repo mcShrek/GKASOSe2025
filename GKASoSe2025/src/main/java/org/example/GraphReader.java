@@ -3,18 +3,12 @@ package org.example;
 import org.graphstream.graph.*;
 import org.graphstream.graph.implementations.SingleGraph;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class GraphReader {
-
-
-
-
-
 
     public static Graph dataReader(String dateiPfad){
         Graph graph = new SingleGraph("graph"); // erstellt neuen Graphen
@@ -24,14 +18,16 @@ public class GraphReader {
                 "node { text-size: 14px; text-color: black; text-alignment: at-right; } " +
                         "edge { text-size: 12px; text-alignment: along; }"
         );
-         //liest zeilenweise die datei und übergibt sie an Graphreader mit graphen und gibt den veränderten graphen zurück
-        try (BufferedReader reader = new BufferedReader(new FileReader(dateiPfad))) {
+        //liest zeilenweise die datei und übergibt sie an Graphreader mit graphen und gibt den veränderten graphen zurück
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(dateiPfad), StandardCharsets.UTF_8));
+        ) {
             String line;
             while ((line = reader.readLine()) != null) {
+                if (line.trim().isEmpty()) continue; //Änderung!
                 graphReader(line, graph);
             }
         } catch (IOException e) {
-            System.out.println("Lesen der Datei hat icht funktioniert: " + e.getMessage());
+            System.out.println("Lesen der Datei hat nicht funktioniert: " + e.getMessage());
         }
         return graph;
     }
@@ -43,11 +39,12 @@ public class GraphReader {
 
 
         Pattern pattern = Pattern.compile(
-                "^\\s*([\\wäöüÄÖÜß\\-]+)" + //erste zeile muss Buchstabe, Ziffer oder zeichen bestehen
-                        "(?:\\s*(--|->)\\s*([\\wäöüÄÖÜß\\-]+))?" + // dritte und zweite Gruppe zusammen aber Optional.
-                        "(?:\\(([^)]+)\\))?\\s*" +
-                        "(?::\\s*(\\d+(?:\\.\\d+)?))?" + // Optional gewicht des Kantens
+                "^\\s*([^\\s:;()]+)" +                                // node1: alles außer Trennzeichen
+                        "(?:\\s*(--|->)\\s*([^\\s:;()]+)" +                   // node2
+                        "(?:\\s*\\(([^)]+)\\))?" +                            // Label
+                        "(?:\\s*:\\s*(\\d+(?:\\.\\d+)?))?)?" +                // Gewicht
                         "\\s*;?\\s*$"
+
         );
         Matcher matcher = pattern.matcher(line); //prüft ob der regex passt
 
@@ -67,7 +64,7 @@ public class GraphReader {
         String edgeLabel = matcher.group(4);
         String weight = matcher.group(5);
 
-        //prüft ob node 1 existiert, falls nicht wird ein neuer Knoten hinzugeügt
+        //prüft ob node 1 existiert, falls nicht wird ein neuer Knoten hinzugefügt
         if (graph.getNode(node1) == null) {
             graph.addNode(node1).setAttribute("ui.label", node1);
         }
@@ -112,16 +109,21 @@ public class GraphReader {
             if (edgeLabel != null) {
                 edge.setAttribute("ui.label", edgeLabel);
             }
+//            if (weight != null) {
+//                edge.setAttribute("ui.label", weight);
+//            }
+        //@Veränderung im Code!!!!!!!!!
             if (weight != null) {
+                double parsedWeight = Double.parseDouble(weight);
+                edge.setAttribute("weight", parsedWeight);
                 edge.setAttribute("ui.label", weight);
             }
         }
     }
-     // prüft ob kante bereits existiert
+    // prüft ob kante bereits existiert
     public static boolean edgeExists(Graph graph, String node1, String node2) {
 
         return graph.getEdge(node1 + "--" + node2) != null ||
                 graph.getEdge(node2 + "--" + node1) != null;
     }
 }
-
