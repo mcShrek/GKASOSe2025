@@ -23,7 +23,7 @@ public class GraphReader {
         ) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.trim().isEmpty()) continue; //Änderung!
+                if (line.trim().isEmpty()) continue;
                 graphReader(line, graph);
             }
         } catch (IOException e) {
@@ -109,10 +109,6 @@ public class GraphReader {
             if (edgeLabel != null) {
                 edge.setAttribute("ui.label", edgeLabel);
             }
-//            if (weight != null) {
-//                edge.setAttribute("ui.label", weight);
-//            }
-        //@Veränderung im Code!!!!!!!!!
             if (weight != null) {
                 double parsedWeight = Double.parseDouble(weight);
                 edge.setAttribute("weight", parsedWeight);
